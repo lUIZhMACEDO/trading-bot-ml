@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Trader - ML-Powered Paper Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e17; --bg2: #111827; --bg3: #0d1321;
+  --border: #1e2a3a; --border2: #2d3b4f;
+  --text: #c8d6e5; --text2: #94a3b8; --text3: #64748b; --text4: #475569; --white: #e2e8f0;
+  --green: #4ade80; --green-bg: #052e16; --green-border: #166534;
+  --red: #f87171; --red-bg: #450a0a;
+  --blue: #60a5fa; --blue-bg: #172554;
+  --purple: #c084fc; --purple-bg: #3b0764;
+  --yellow: #fbbf24;
+  --accent1: #00d4ff; --accent2: #7c3aed; --accent3: #f472b6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'JetBrains Mono',monospace; background:var(--bg); color:var(--text); min-height:100vh; }
+::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+/* Header */
+.header { position:sticky; top:0; z-index:100; background:linear-gradient(180deg,#0d1321,#1a1f36); border-bottom:1px solid var(--border); padding:10px 24px; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-size:16px; font-weight:800; background:linear-gradient(135deg,var(--accent1),var(--accent2),var(--accent3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.logo-sub { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px; }
+.tab-bar { display:flex; background:var(--bg3); border-radius:8px; border:1px solid var(--border); overflow:hidden; }
+.tab-btn { padding:8px 16px; background:none; border:none; color:var(--text3); font-family:inherit; font-size:11px; font-weight:600; cursor:pointer; transition:all .2s; }
+.tab-btn.active { background:linear-gradient(135deg,#1e3a5f,#2d1b69); color:var(--white); border-radius:6px; }
+.tab-btn:hover:not(.active) { color:var(--text); }
+.status { display:flex; align-items:center; gap:8px; }
+.status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; }
+.badge-green { background:var(--green-bg); color:var(--green); border:1px solid var(--green-border); }
+.badge-blue { background:var(--blue-bg); color:var(--blue); }
+.badge-red { background:var(--red-bg); color:var(--red); }
+.badge-purple { background:var(--purple-bg); color:var(--purple); }
+
+/* Layout */
+.main { max-width:1400px; margin:0 auto; padding:16px 24px; }
+.tab-content { display:none; } .tab-content.active { display:block; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; }
+.grid-main { display:grid; grid-template-columns:1fr 340px; gap:12px; }
+
+/* Cards */
+.card { background:linear-gradient(145deg,var(--bg2),var(--bg3)); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
+.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.card-title { font-size:12px; font-weight:700; color:var(--white); text-transform:uppercase; letter-spacing:1px; }
+
+/* Stats */
+.stat { text-align:center; }
+.stat-value { font-size:22px; font-weight:800; }
+.stat-label { font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text3); margin-top:4px; }
+
+/* Tables */
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); padding:8px; text-align:left; border-bottom:1px solid var(--border); font-weight:600; }
+td { padding:8px; border-bottom:1px solid rgba(30,42,58,.3); color:var(--text2); }
+tr:hover td { background:var(--bg2); }
+
+/* Buttons */
+.btn { padding:10px 20px; border:none; border-radius:8px; font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
+.btn:hover { opacity:.9; transform:translateY(-1px); }
+.btn-buy { background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; }
+.btn-sell, .btn-danger { background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; }
+.btn-primary { background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; }
+.btn-secondary { background:var(--border); color:var(--text); }
+.btn-sm { padding:6px 12px; font-size:10px; }
+
+/* Inputs */
+input, select { background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:10px 12px; color:var(--white); font-family:inherit; font-size:12px; width:100%; }
+input:focus, select:focus { outline:none; border-color:var(--blue); }
+label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; display:block; }
+
+/* Strategy Cards */
+.strat-card { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:12px; cursor:pointer; transition:all .2s; margin-bottom:8px; }
+.strat-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+.strat-card.active { border-color:var(--blue); background:var(--blue-bg); }
+.strat-name { font-size:12px; font-weight:700; color:var(--white); }
+.strat-desc { font-size:10px; color:var(--text3); margin-top:4px; }
+.strat-meta { display:flex; gap:8px; margin-top:6px; }
+
+/* Log */
+.log { max-height:190px; overflow-y:auto; font-size:11px; }
+.log-entry { padding:4px 0; border-bottom:1px solid rgba(30,42,58,.2); color:var(--text2); }
+
+/* Info box */
+.info-box { padding:10px 14px; border-radius:8px; font-size:11px; margin-top:10px; }
+.info-green { background:var(--green-bg); border:1px solid var(--green-border); color:var(--green); }
+.info-blue { background:var(--blue-bg); border:1px solid #1e40af; color:var(--blue); }
+
+/* Trade list */
+.trade-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(30,42,58,.2); }
+
+/* Banner */
+.demo-banner { background:linear-gradient(135deg,var(--blue-bg),var(--purple-bg)); border:1px solid var(--blue); border-radius:8px; padding:12px 16px; margin-bottom:16px; text-align:center; font-size:11px; color:var(--blue); }
+
+@media (max-width:900px) { .grid-2,.grid-3,.grid-4,.grid-main { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">QUANTUM TRADER</div>
+    <div class="logo-sub">Alpaca Paper Trading &bull; ML Engine</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="trade">Trade</button>
+    <button class="tab-btn" data-tab="auto">Auto Trade</button>
+    <button class="tab-btn" data-tab="analysis">Analysis</button>
+    <button class="tab-btn" data-tab="data">Data & ML</button>
+  </div>
+  <div class="status">
+    <div class="status-dot"></div>
+    <span style="font-size:10px;color:var(--text3)">Paper</span>
+    <span class="badge badge-green">Connected</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="demo-banner">Live Demo &mdash; Simulated data with fake updating prices. <a href="https://github.com/lUIZhMACEDO/trading-bot-ml" style="color:var(--accent1)">View on GitHub</a></div>
+
+  <!-- ═══ DASHBOARD TAB ═══ -->
+  <div class="tab-content active" id="tab-dashboard">
+    <div class="grid-4" id="account-stats">
+      <div class="card stat"><div class="stat-value" style="color:var(--white)" id="s-portfolio">$102,847.33</div><div class="stat-label">Portfolio Value</div></div>
+      <div class="card stat"><div class="stat-value" style="color:var(--blue)" id="s-cash">$67,214.50</div><div class="stat-label">Cash Available</div></div>
+      <div class="card stat"><div class="stat-value" style="color:var(--purple)" id="s-buying">$134,429.00</div><div class="stat-label">Buying Power</div></div>
+      <div class="card stat"><div class="stat-value" style="color:var(--green)" id="s-pnl">+$2,847.33</div><div class="stat-label">Total P&L</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Open Positions</span><span class="badge badge-blue" id="pos-count">5</span></div>
+      <table>
+        <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Price</th><th>Current</th><th>P&L ($)</th><th>P&L (%)</th><th></th></tr></thead>
+        <tbody id="positions-table"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Recent Trades</span></div>
+      <div class="log" id="recent-trades"></div>
+    </div>
+  </div>
+
+  <!-- ═══ TRADE TAB ═══ -->
+  <div class="tab-content" id="tab-trade">
+    <div class="grid-main">
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Market Data</span></div>
+          <div class="grid-4" id="market-prices"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Order History</span></div>
+          <table>
+            <thead><tr><th>Time</th><th>Side</th><th>Symbol</th><th>Qty</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody id="order-history"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Place Order</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div><label>Symbol</label><input type="text" value="AAPL" id="order-sym"></div>
+            <div><label>Side</label><select id="order-side"><option>BUY</option><option>SELL</option></select></div>
+            <div><label>Quantity</label><input type="number" value="10" id="order-qty"></div>
+            <div><label>Type</label><select id="order-type"><option>Market</option><option>Limit</option></select></div>
+            <button class="btn btn-buy" style="width:100%" onclick="placeOrder()">BUY AAPL</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Quick Actions</span></div>
+          <div id="quick-actions" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ AUTO TRADE TAB ═══ -->
+  <div class="tab-content" id="tab-auto">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Strategy</span><span class="badge badge-green" id="auto-badge">OFF</span></div>
+        <div id="strategy-list"></div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Auto-Trade Configuration</span></div>
+          <div class="grid-2" style="margin-bottom:10px;">
+            <div><label>Budget</label><input type="number" value="10000"></div>
+            <div><label>Max Positions</label><input type="number" value="3"></div>
+          </div>
+          <div class="grid-2" style="margin-bottom:12px;">
+            <div><label>Stop Loss %</label><input type="number" value="2.0" step="0.1"></div>
+            <div><label>Take Profit %</label><input type="number" value="5.0" step="0.1"></div>
+          </div>
+          <button class="btn btn-buy" style="width:100%" id="auto-toggle" onclick="toggleAuto()">START AUTO-TRADE</button>
+          <div class="info-green" id="auto-status" style="display:none;">Auto-trading active &mdash; scanning 30 stocks every 60s</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Auto-Trade Log</span></div>
+          <div class="log" id="auto-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ANALYSIS TAB ═══ -->
+  <div class="tab-content" id="tab-analysis">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Analyze Symbol</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <div style="flex:1"><label>Symbol</label><input type="text" value="AAPL" id="analyze-sym"></div>
+        <button class="btn btn-primary" onclick="analyzeStock()">Analyze</button>
+        <button class="btn btn-secondary" onclick="scanAll()">Scan All 30 Stocks</button>
+      </div>
+    </div>
+    <div id="analysis-result"></div>
+    <div id="scan-result"></div>
+  </div>
+
+  <!-- ═══ DATA & ML TAB ═══ -->
+  <div class="tab-content" id="tab-data">
+    <div class="grid-3">
+      <div class="card stat"><div class="stat-value" style="color:var(--blue)">13</div><div class="stat-label">Tables</div></div>
+      <div class="card stat"><div class="stat-value" style="color:var(--purple)">247,891</div><div class="stat-label">Total Rows</div></div>
+      <div class="card stat"><div class="stat-value" style="color:var(--yellow)">150,600</div><div class="stat-label">OHLCV Bars</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Data Pipeline</span></div>
+      <p style="font-size:11px;color:var(--text2);margin-bottom:12px;">Ingests 2yr OHLCV from Alpaca, fundamentals from yfinance, 10 FRED macro series, computes vectorized technicals, detects market regime, and runs 5 strategies across 30 stocks.</p>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="runPipeline()">Run Full Pipeline (~2 min)</button>
+        <button class="btn btn-secondary" onclick="runPipeline()">Download Data Only</button>
+      </div>
+      <div class="info-blue" id="pipeline-status" style="display:none;margin-top:10px;"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Database Tables</span></div>
+      <table>
+        <thead><tr><th>Table</th><th>Rows</th></tr></thead>
+        <tbody id="db-tables"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">ML Model Performance</span></div>
+      <table>
+        <thead><tr><th>Model</th><th>Weight</th><th>Train R2</th><th>Test R2</th><th>Features</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--white)">LightGBM</td><td>40%</td><td style="color:var(--green)">0.847</td><td style="color:var(--green)">0.623</td><td>15</td></tr>
+          <tr><td style="color:var(--white)">Random Forest</td><td>35%</td><td style="color:var(--green)">0.912</td><td style="color:var(--green)">0.581</td><td>15</td></tr>
+          <tr><td style="color:var(--white)">Ridge Regression</td><td>25%</td><td style="color:var(--blue)">0.534</td><td style="color:var(--blue)">0.498</td><td>15</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ Simulated Data ═══
+const STOCKS = {
+  AAPL:{p:213.45,name:'Apple'},MSFT:{p:428.90,name:'Microsoft'},NVDA:{p:875.22,name:'NVIDIA'},
+  GOOGL:{p:176.33,name:'Alphabet'},AMZN:{p:189.75,name:'Amazon'},META:{p:512.10,name:'Meta'},
+  TSLA:{p:178.44,name:'Tesla'},JPM:{p:198.60,name:'JPMorgan'},V:{p:282.15,name:'Visa'},
+  UNH:{p:521.80,name:'UnitedHealth'},JNJ:{p:155.42,name:'J&J'},WMT:{p:167.33,name:'Walmart'},
+  MA:{p:468.90,name:'Mastercard'},PG:{p:162.75,name:'Procter&Gamble'},HD:{p:358.20,name:'Home Depot'},
+  XOM:{p:118.45,name:'Exxon'},BAC:{p:37.88,name:'BankOfAmerica'},DIS:{p:112.55,name:'Disney'},
+  NFLX:{p:628.90,name:'Netflix'},AMD:{p:162.33,name:'AMD'},CRM:{p:278.44,name:'Salesforce'},
+  COST:{p:742.10,name:'Costco'},PEP:{p:178.60,name:'Pepsi'},AVGO:{p:168.15,name:'Broadcom'},
+  TMO:{p:562.80,name:'ThermoFisher'},MRK:{p:128.42,name:'Merck'},ABBV:{p:175.33,name:'AbbVie'},
+  LLY:{p:782.90,name:'Eli Lilly'},ORCL:{p:125.75,name:'Oracle'},ADBE:{p:518.20,name:'Adobe'}
+};
+
+const positions = [
+  {sym:'AAPL',qty:15,avg:208.30}, {sym:'NVDA',qty:8,avg:842.50},
+  {sym:'MSFT',qty:10,avg:415.20}, {sym:'META',qty:5,avg:498.75},
+  {sym:'TSLA',qty:12,avg:185.60}
+];
+
+const strategies = [
+  {name:'Composite (All 5)',type:'Adaptive',win:'60-70%',risk:'Medium',desc:'Runs all 5 strategies, aggregates into -5 to +5 score'},
+  {name:'RSI + MACD Confluence',type:'Quick',win:'58-65%',risk:'Medium',desc:'Oversold RSI + MACD histogram crossover'},
+  {name:'Bollinger Mean Reversion',type:'Quick',win:'55-62%',risk:'Low',desc:'Fades price extremes, Hurst skips trending'},
+  {name:'Golden/Death Cross',type:'Medium',win:'45-55%',risk:'Low',desc:'SMA 50/200 crossover with ADX confirmation'},
+  {name:'Momentum Breakout',type:'Quick',win:'50-60%',risk:'High',desc:'Triple-timeframe (5d/10d/21d) + volume'},
+  {name:'Hurst Regime Adaptive',type:'Medium',win:'55-65%',risk:'Medium',desc:'Auto-switches trend-follow vs mean-reversion'},
+  {name:'ML Ensemble',type:'Medium',win:'60-70%',risk:'Medium',desc:'LightGBM 40% + RF 35% + Ridge 25%'}
+];
+
+const dbTables = [
+  ['ohlcv',150600],['technicals',150600],['fundamentals',930],['macro',5020],
+  ['signals',27900],['composite_scores',930],['trades',487],['ml_models',90],
+  ['backtests',210],['private_exposure',25],['position_sizing',930],
+  ['market_regime',502],['portfolio_snapshots',8167]
+];
+
+const tradeLog = [];
+let autoTrading = false;
+let selectedStrat = 0;
+
+// ═══ Price Simulation ═══
+function tick() {
+  Object.keys(STOCKS).forEach(s => {
+    STOCKS[s].p *= 1 + (Math.random() - 0.498) * 0.003;
+    STOCKS[s].p = Math.round(STOCKS[s].p * 100) / 100;
+  });
+}
+
+// ═══ Tab Switching ═══
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══ Render Dashboard ═══
+function renderDashboard() {
+  let totalPnl = 0;
+  const tbody = document.getElementById('positions-table');
+  tbody.innerHTML = '';
+  positions.forEach(pos => {
+    const cur = STOCKS[pos.sym].p;
+    const pnl = (cur - pos.avg) * pos.qty;
+    const pnlPct = ((cur - pos.avg) / pos.avg * 100);
+    totalPnl += pnl;
+    const color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    tbody.innerHTML += `<tr>
+      <td style="color:var(--white);font-weight:700">${pos.sym}</td>
+      <td>${pos.qty}</td><td>$${pos.avg.toFixed(2)}</td>
+      <td>$${cur.toFixed(2)}</td>
+      <td style="color:${color}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</td>
+      <td style="color:${color}">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</td>
+      <td><button class="btn btn-danger btn-sm">Close</button></td>
+    </tr>`;
+  });
+
+  const posValue = positions.reduce((s,p) => s + STOCKS[p.sym].p * p.qty, 0);
+  const cash = 67214.50;
+  document.getElementById('s-portfolio').textContent = '$' + (cash + posValue).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  document.getElementById('s-cash').textContent = '$' + cash.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  document.getElementById('s-buying').textContent = '$' + (cash * 2).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const pnlEl = document.getElementById('s-pnl');
+  pnlEl.textContent = (totalPnl>=0?'+':'') + '$' + totalPnl.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  pnlEl.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+// ═══ Render Trades ═══
+function renderTrades() {
+  const el = document.getElementById('recent-trades');
+  el.innerHTML = tradeLog.slice(-20).reverse().map(t =>
+    `<div class="trade-item">
+      <span class="badge ${t.side==='BUY'?'badge-green':'badge-red'}">${t.side}</span>
+      <span style="color:var(--white);font-weight:700;font-size:12px">${t.sym}</span>
+      <span style="font-size:11px">${t.qty} @ $${t.price.toFixed(2)}</span>
+      <span style="color:var(--text3);font-size:10px;margin-left:auto">${t.strat} &bull; ${t.time}</span>
+    </div>`
+  ).join('');
+}
+
+// ═══ Market Prices ═══
+function renderMarket() {
+  const el = document.getElementById('market-prices');
+  const syms = Object.keys(STOCKS).slice(0, 12);
+  el.innerHTML = syms.map(s => {
+    const chg = (Math.random() - 0.48) * 3;
+    const color = chg >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<div class="card stat" style="padding:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--white)">${s}</div>
+      <div style="font-size:14px;font-weight:800;color:var(--white)">$${STOCKS[s].p.toFixed(2)}</div>
+      <div style="font-size:10px;color:${color}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ Order History ═══
+function renderOrders() {
+  const el = document.getElementById('order-history');
+  el.innerHTML = tradeLog.slice(-10).reverse().map(t =>
+    `<tr><td>${t.time}</td><td><span class="badge ${t.side==='BUY'?'badge-green':'badge-red'}">${t.side}</span></td>
+    <td style="color:var(--white)">${t.sym}</td><td>${t.qty}</td><td>Market</td>
+    <td><span class="badge badge-green">Filled</span></td></tr>`
+  ).join('');
+}
+
+// ═══ Quick Actions ═══
+function renderQuickActions() {
+  const el = document.getElementById('quick-actions');
+  el.innerHTML = positions.map(p =>
+    `<button class="btn btn-danger btn-sm" style="width:100%">Close ${p.sym} (${p.qty} shares)</button>`
+  ).join('') + '<button class="btn btn-danger" style="width:100%;margin-top:6px">Close All Positions</button>';
+}
+
+// ═══ Strategies ═══
+function renderStrategies() {
+  const el = document.getElementById('strategy-list');
+  el.innerHTML = strategies.map((s,i) => {
+    const typeColor = s.type === 'Quick' ? 'badge-purple' : 'badge-blue';
+    return `<div class="strat-card ${i===selectedStrat?'active':''}" onclick="selectedStrat=${i};renderStrategies()">
+      <div class="strat-name">${s.name}</div>
+      <div class="strat-desc">${s.desc}</div>
+      <div class="strat-meta">
+        <span class="badge ${typeColor}">${s.type}</span>
+        <span style="color:var(--green);font-size:10px;font-weight:700">${s.win}</span>
+        <span style="color:var(--yellow);font-size:10px">${s.risk} risk</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ DB Tables ═══
+function renderDB() {
+  document.getElementById('db-tables').innerHTML = dbTables.map(([name,rows]) =>
+    `<tr><td style="color:var(--white)">${name}</td><td>${rows.toLocaleString()}</td></tr>`
+  ).join('');
+}
+
+// ═══ Place Order (simulated) ═══
+function placeOrder() {
+  const sym = document.getElementById('order-sym').value.toUpperCase();
+  const side = document.getElementById('order-side').value;
+  const qty = parseInt(document.getElementById('order-qty').value);
+  if (!STOCKS[sym]) { alert('Unknown symbol'); return; }
+  const now = new Date();
+  tradeLog.push({sym, side, qty, price: STOCKS[sym].p, strat: 'Manual', time: now.toLocaleTimeString()});
+  renderTrades(); renderOrders();
+}
+
+// ═══ Auto Trade Toggle ═══
+function toggleAuto() {
+  autoTrading = !autoTrading;
+  const btn = document.getElementById('auto-toggle');
+  const badge = document.getElementById('auto-badge');
+  const status = document.getElementById('auto-status');
+  if (autoTrading) {
+    btn.textContent = 'STOP AUTO-TRADE'; btn.className = 'btn btn-danger'; btn.style.width = '100%';
+    badge.textContent = 'ON'; badge.className = 'badge badge-green';
+    status.style.display = 'block';
+  } else {
+    btn.textContent = 'START AUTO-TRADE'; btn.className = 'btn btn-buy'; btn.style.width = '100%';
+    badge.textContent = 'OFF'; badge.className = 'badge badge-blue';
+    status.style.display = 'none';
+  }
+}
+
+// ═══ Auto Trade Simulation ═══
+function autoTradeTick() {
+  if (!autoTrading) return;
+  const syms = Object.keys(STOCKS);
+  const sym = syms[Math.floor(Math.random() * syms.length)];
+  const side = Math.random() > 0.45 ? 'BUY' : 'SELL';
+  const qty = Math.floor(Math.random() * 10) + 1;
+  const now = new Date();
+  const strat = strategies[selectedStrat].name;
+  tradeLog.push({sym, side, qty, price: STOCKS[sym].p, strat, time: now.toLocaleTimeString()});
+  const logEl = document.getElementById('auto-log');
+  const color = side === 'BUY' ? 'var(--green)' : 'var(--red)';
+  logEl.innerHTML = `<div class="log-entry"><span style="color:${color};font-weight:700">${side}</span> ${qty}x ${sym} @ $${STOCKS[sym].p.toFixed(2)} [${strat}]</div>` + logEl.innerHTML;
+  renderTrades();
+}
+
+// ═══ Analyze Stock ═══
+function analyzeStock() {
+  const sym = document.getElementById('analyze-sym').value.toUpperCase();
+  const strats = ['RSI + MACD','Bollinger','Golden Cross','Momentum','Hurst Regime'];
+  const signals = strats.map(() => {const r=Math.random(); return r>0.6?'BUY':r>0.3?'HOLD':'SELL';});
+  const scores = signals.map(s => s==='BUY'?Math.round(Math.random()*2+1):s==='SELL'?-Math.round(Math.random()*2+1):0);
+  const composite = scores.reduce((a,b)=>a+b,0);
+  const rating = composite>=3?'Strong Buy':composite>=1?'Buy':composite<=-3?'Strong Sell':composite<=-1?'Sell':'Hold';
+  const rColor = composite>=1?'var(--green)':composite<=-1?'var(--red)':'var(--text3)';
+  const buys = signals.filter(s=>s==='BUY').length;
+  const sells = signals.filter(s=>s==='SELL').length;
+  const holds = signals.filter(s=>s==='HOLD').length;
+
+  document.getElementById('scan-result').innerHTML = '';
+  document.getElementById('analysis-result').innerHTML = `
+    <div class="grid-3" style="margin-top:12px">
+      <div class="card stat"><div class="stat-value" style="color:${rColor}">${composite>=0?'+':''}${composite}</div><div class="stat-label">Composite Score</div></div>
+      <div class="card stat"><div class="stat-value" style="color:${rColor}">${rating}</div><div class="stat-label">Rating</div></div>
+      <div class="card stat"><div class="stat-value" style="color:var(--white)">${buys}B / ${sells}S / ${holds}H</div><div class="stat-label">Signal Split</div></div>
+    </div>
+    <div class="card"><div class="card-header"><span class="card-title">Strategy Breakdown &mdash; ${sym}</span></div>
+    <table><thead><tr><th>Strategy</th><th>Signal</th><th>Score</th><th>Reason</th></tr></thead><tbody>
+    ${strats.map((s,i) => {
+      const sc = signals[i]; const col = sc==='BUY'?'badge-green':sc==='SELL'?'badge-red':'badge-blue';
+      const reasons = {BUY:['Oversold bounce','Bullish crossover','Momentum shift up'],SELL:['Overbought rejection','Bearish divergence','Breakdown detected'],HOLD:['No clear signal','Neutral zone','Waiting for confirmation']};
+      return `<tr><td style="color:var(--white)">${s}</td><td><span class="badge ${col}">${sc}</span></td>
+      <td style="color:${scores[i]>=0?'var(--green)':'var(--red)'}">${scores[i]>=0?'+':''}${scores[i]}</td>
+      <td style="color:var(--text3)">${reasons[sc][Math.floor(Math.random()*3)]}</td></tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+}
+
+function scanAll() {
+  const syms = Object.keys(STOCKS);
+  document.getElementById('analysis-result').innerHTML = '';
+  let html = '<div class="card" style="margin-top:12px"><div class="card-header"><span class="card-title">Scan Results &mdash; 30 Stocks</span></div><table><thead><tr><th>Symbol</th><th>Score</th><th>Rating</th><th>Buy</th><th>Sell</th><th>Hold</th></tr></thead><tbody>';
+  syms.forEach(sym => {
+    const score = Math.floor(Math.random()*11)-5;
+    const rating = score>=3?'Strong Buy':score>=1?'Buy':score<=-3?'Strong Sell':score<=-1?'Sell':'Hold';
+    const rColor = score>=1?'var(--green)':score<=-1?'var(--red)':'var(--text3)';
+    const b=Math.floor(Math.random()*5),s=Math.floor(Math.random()*3),h=5-b-s>0?5-b-s:0;
+    html += `<tr><td style="color:var(--white);font-weight:700">${sym}</td>
+      <td style="color:${rColor};font-weight:700">${score>=0?'+':''}${score}</td>
+      <td style="color:${rColor}">${rating}</td>
+      <td style="color:var(--green)">${b}</td><td style="color:var(--red)">${s}</td><td>${h}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('scan-result').innerHTML = html;
+}
+
+// ═══ Pipeline (simulated) ═══
+function runPipeline() {
+  const el = document.getElementById('pipeline-status');
+  el.style.display = 'block';
+  const steps = ['Ingesting OHLCV from Alpaca...','Computing technicals...','Fetching fundamentals from yfinance...','Loading FRED macro data...','Detecting market regime...','Running 5 strategies across 30 stocks...','Training ML ensemble (walk-forward)...','Done!'];
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < steps.length) { el.textContent = steps[i]; i++; }
+    else { clearInterval(iv); setTimeout(() => { el.style.display = 'none'; }, 2000); }
+  }, 1500);
+}
+
+// ═══ Initial Trades ═══
+const initSyms = ['AAPL','NVDA','MSFT','META','TSLA','GOOGL','AMZN','AMD'];
+initSyms.forEach((sym,i) => {
+  tradeLog.push({sym, side: i%3===0?'SELL':'BUY', qty: Math.floor(Math.random()*15)+1,
+    price: STOCKS[sym].p * (1 + (Math.random()-0.5)*0.02),
+    strat: strategies[Math.floor(Math.random()*7)].name,
+    time: new Date(Date.now() - (initSyms.length-i)*120000).toLocaleTimeString()});
+});
+
+// ═══ Boot ═══
+renderDashboard(); renderTrades(); renderMarket(); renderOrders();
+renderQuickActions(); renderStrategies(); renderDB();
+
+setInterval(() => { tick(); renderDashboard(); renderMarket(); }, 5000);
+setInterval(autoTradeTick, 8000);
+</script>
+</body>
+</html>
