@@ -1,0 +1,37 @@
+# ── Secrets (NEVER commit these) ──
+.env
+.env.*
+!.env.example
+
+# ── Database ──
+*.db
+*.db-wal
+*.db-shm
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# ── ML models ──
+*.pkl
+*.joblib
+models/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ──
+*.log
