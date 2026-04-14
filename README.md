@@ -19,7 +19,7 @@ python setup_and_run.py
 ```
 
 That's it. Installs dependencies, launches the server, opens your browser.  
-First time: paste your [Alpaca paper trading](https://app.alpaca.markets) API keys → click Connect.
+First time: paste your [Alpaca paper trading](https://app.alpica.markets) API keys → click Connect.
 
 ---
 
@@ -84,7 +84,7 @@ quantum-trader/
 ├── .env.example          # Config template
 ├── .gitignore
 ├── LICENSE
-└── README.md
+├── README.md
 ```
 
 **How it works:**
@@ -158,7 +158,7 @@ python quantum_trader.py  # Terminal CLI
 ```
 
 ### Get API Keys
-1. Sign up at [app.alpaca.markets](https://app.alpaca.markets)
+1. Sign up at [app.alpaca.markets](https://app.alpica.markets)
 2. Switch to **Paper Trading** (top-left dropdown)
 3. Go to **API Keys** → **Generate**
 4. Copy Key and Secret into `.env`
