@@ -37,14 +37,16 @@ except ImportError:
 from dotenv import load_dotenv
 
 # ── Import the trading engine ──
-# Add current dir to path so we can import quantum_trader_v2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    import quantum_trader_v2 as qt
+    import quantum_trader as qt
 except ImportError:
-    print("  ❌ Can't find quantum_trader_v2.py — put it in the same folder as this file.")
-    sys.exit(1)
+    try:
+        import quantum_trader_v2 as qt
+    except ImportError:
+        print("  ❌ Can't find quantum_trader.py — put it in the same folder as this file.")
+        sys.exit(1)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s │ %(levelname)-7s │ %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("QuantumWeb")

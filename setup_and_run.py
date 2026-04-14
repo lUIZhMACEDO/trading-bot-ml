@@ -97,12 +97,16 @@ def main():
     if not os.path.exists(bot_path):
         bot_path = "quantum_web.py"
         if not os.path.exists(bot_path):
-            # Fall back to terminal version
-            bot_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quantum_trader_v2.py")
-            if not os.path.exists(bot_path):
-                bot_path = "quantum_trader_v2.py"
-            if not os.path.exists(bot_path):
-                print("  ❌ Can't find quantum_web.py or quantum_trader_v2.py")
+            # Fall back to terminal version — try both names
+            for name in ["quantum_trader.py", "quantum_trader_v2.py"]:
+                bot_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
+                if os.path.exists(bot_path):
+                    break
+                bot_path = name
+                if os.path.exists(bot_path):
+                    break
+            else:
+                print("  ❌ Can't find quantum_web.py or quantum_trader.py")
                 print("     Make sure they're in the same folder as this script.")
                 sys.exit(1)
 

@@ -7,19 +7,20 @@ Manual trades, auto-trading with 7 strategies, walk-forward ML, and a full web U
 ![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python&logoColor=white)
 ![Alpaca](https://img.shields.io/badge/Alpaca-Paper%20Trading-yellow?logo=alpaca&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
+[**Live Demo**](https://luizhmacedo.github.io/trading-bot-ml/) — Interactive demo with simulated data
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/quantum-trader.git
+git clone https://github.com/lUIZhMACEDO/trading-bot-ml.git
 cd quantum-trader
 python setup_and_run.py
 ```
 
 That's it. Installs dependencies, launches the server, opens your browser.  
-First time: paste your [Alpaca paper trading](https://app.alpica.markets) API keys → click Connect.
+First time: paste your [Alpaca paper trading](https://app.alpaca.markets) API keys → click Connect.
 
 ---
 
@@ -85,6 +86,8 @@ quantum-trader/
 ├── .gitignore
 ├── LICENSE
 ├── README.md
+├── index.html            # GitHub Pages interactive demo
+├── claude.md             # Project tracker
 ```
 
 **How it works:**
@@ -141,7 +144,7 @@ private                  # Private company exposure
 
 ```bash
 # 1. Clone
-git clone https://github.com/YOUR_USERNAME/quantum-trader.git
+git clone https://github.com/lUIZhMACEDO/trading-bot-ml.git
 cd quantum-trader
 
 # 2. Install
@@ -158,7 +161,7 @@ python quantum_trader.py  # Terminal CLI
 ```
 
 ### Get API Keys
-1. Sign up at [app.alpaca.markets](https://app.alpica.markets)
+1. Sign up at [app.alpaca.markets](https://app.alpaca.markets)
 2. Switch to **Paper Trading** (top-left dropdown)
 3. Go to **API Keys** → **Generate**
 4. Copy Key and Secret into `.env`
