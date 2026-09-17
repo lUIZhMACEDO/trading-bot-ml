@@ -1,184 +1,98 @@
-# ⚛ Quantum Trader
+# Quantum Trader
 
-**ML-powered paper trading bot with browser dashboard — built on Alpaca's API.**
+A paper-trading engine on Alpaca's API, with a browser dashboard and a terminal CLI. It scores a
+watchlist with five rule-based strategies plus an ML ensemble, sizes positions by volatility, and
+places paper orders. Everything runs locally against SQLite.
 
-Manual trades, auto-trading with 7 strategies, walk-forward ML, and a full web UI at `localhost:8000`.
+Paper trading only. No real money, and none of this is investment advice.
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python&logoColor=white)
-![Alpaca](https://img.shields.io/badge/Alpaca-Paper%20Trading-yellow?logo=alpaca&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
-[**Live Demo**](https://luizhmacedo.github.io/trading-bot-ml/) — Interactive demo with simulated data
+## How it works
 
----
+**Machine learning** (`quantum_trader.py`)
 
-## Quick Start
+The target is the direction of the 21-day forward return (up or down), not the return itself.
+Training uses 5-fold `TimeSeriesSplit`, so each fold trains only on data before its test window and
+the model never sees the future. Three models vote: LightGBM at 40%, random forest at 35%, Ridge at
+25%. Features are the indicators below — RSI, MACD, Bollinger width, the Hurst exponent, ADX,
+momentum, and a volume z-score.
+
+The honest caveat: the headline metric is fold accuracy, and accuracy is a weak measure for 21-day
+direction, because the base rate is already better than a coin flip. Treat the ensemble as a filter
+on the rule-based signals rather than as a forecast.
+
+**Strategies**
+
+Five screens, each returning a signal per ticker, plus a composite that aggregates them:
+
+| Strategy | What it looks for |
+|---|---|
+| RSI + MACD | Oversold RSI with a MACD histogram crossover |
+| Bollinger reversion | Price at a band extreme, skipped when the Hurst exponent says trending |
+| Golden/death cross | SMA 50/200 crossover, confirmed by ADX |
+| Momentum breakout | 5/10/21-day alignment plus a volume check |
+| Hurst regime | Switches between trend-following and mean-reversion by regime |
+
+**Backtesting**
+
+Trades fill at the next day's open, not the signal close. Costs are modeled at 5 bps per trade plus
+2 bps of slippage. Results are stored per strategy so you can compare them against buy-and-hold.
+I've deliberately left performance numbers out of this README — run it on your own watchlist and
+dates and you'll get your own, which is the only version worth quoting.
+
+**Risk and sizing**
+
+Volatility-adjusted sizing targeting roughly 1% portfolio risk per position, Kelly-criterion bet
+sizing, and a market-regime read (bull, bear, sideways, high-vol) from SPY, VIX, and breadth that
+halves size when volatility spikes.
+
+**Data**
+
+2 years of OHLCV from Alpaca, fundamentals from yfinance, 10 FRED macro series, and indicators
+computed in a single vectorized pass. Stored in a 13-table SQLite database with WAL mode.
+
+## Running it
 
 ```bash
 git clone https://github.com/lUIZhMACEDO/trading-bot-ml.git
-cd quantum-trader
-python setup_and_run.py
+cd trading-bot-ml
+python setup_and_run.py     # installs dependencies, starts the server, opens the dashboard
 ```
 
-That's it. Installs dependencies, launches the server, opens your browser.  
-First time: paste your [Alpaca paper trading](https://app.alpaca.markets) API keys → click Connect.
+On first run it asks for your [Alpaca paper trading](https://app.alpaca.markets) keys and writes
+them to `.env` (see `.env.example`). Nothing is committed.
 
----
+Dashboard only: `python quantum_web.py` — FastAPI on `localhost:8000`, 24 routes, with tabs for the
+portfolio, manual trades, auto-trading, analysis, and the data pipeline.
 
-## Features
-
-### Manual Trading
-Buy and sell any stock from the browser — market or limit orders, one click to close positions.
-
-### Auto-Trading (7 Strategies)
-Set a budget, pick a strategy, hit Start. The bot scans 30 stocks every 60 seconds and trades autonomously with stop-loss and take-profit.
-
-| Strategy | Type | Win Rate | What It Does |
-|----------|------|----------|-------------|
-| **Composite** | Adaptive | 60-70% | Runs all 5 below → aggregates into a single score |
-| **RSI + MACD** | Quick | 58-65% | Confluence of oversold RSI + MACD histogram crossover |
-| **Bollinger Reversion** | Quick | 55-62% | Fades price extremes, skips when Hurst says trending |
-| **Golden/Death Cross** | Medium | 45-55% | SMA 50/200 crossover confirmed by ADX |
-| **Momentum Breakout** | Quick | 50-60% | Triple-timeframe alignment (5d/10d/21d) + volume |
-| **Hurst Regime** | Medium | 55-65% | Auto-switches trend-follow vs mean-reversion |
-| **ML Ensemble** | Medium | 60-70% | LightGBM + Random Forest + Ridge (walk-forward trained) |
-
-### ML Engine
-- Walk-forward expanding-window cross-validation (no lookahead bias)
-- LightGBM + Random Forest + Ridge ensemble (40/35/25 weights)
-- 15 features: RSI, MACD, Bollinger width, Hurst exponent, ADX, momentum, volume Z-score
-- Predicts 21-day forward returns
-
-### Data Pipeline
-One command ingests everything:
-- 2 years of OHLCV from Alpaca for 30 stocks
-- Fundamentals from yfinance (P/E, FCF yield, ROE, analyst ratings)
-- 10 FRED macro series (VIX, treasury yields, credit spreads, CPI)
-- Vectorized technicals computed in a single pass (not row-by-row)
-- Private company synthetic exposure (Anthropic, SpaceX, OpenAI, Stripe, xAI via public proxies)
-
-### Risk Management
-- Volatility-adjusted position sizing (targets 1% portfolio risk per position)
-- Kelly criterion for optimal bet sizing
-- Market regime detection (bull/bear/sideways/high-vol) using SPY + VIX + breadth
-- Auto-halves position size in high-volatility regimes
-- Transaction cost modeling (5bps + 2bps slippage) in backtests
-
-### Database
-13-table normalized SQLite with WAL mode:
+Terminal: `python quantum_trader.py`
 
 ```
-ohlcv, technicals, fundamentals, macro, signals,
-composite_scores, trades, ml_models, backtests,
-private_exposure, position_sizing, market_regime, portfolio_snapshots
+pipeline              run the full data ingest
+scan                  score the watchlist
+analyze AAPL          five-strategy breakdown for one ticker
+train AAPL            walk-forward training
+backtest AAPL momentum
+buy AAPL 10           paper market order (add a price for a limit)
+positions             current holdings
+auto start composite  start the auto-trader
+regime                current market regime
 ```
 
----
-
-## Architecture
+## Layout
 
 ```
-quantum-trader/
-├── setup_and_run.py      # One-click installer + launcher
-├── quantum_web.py        # FastAPI server + browser dashboard (28 API routes)
-├── quantum_trader.py     # Trading engine (also works standalone as CLI)
-├── requirements.txt
-├── .env.example          # Config template
-├── .gitignore
-├── LICENSE
-├── README.md
-├── index.html            # GitHub Pages interactive demo
-├── claude.md             # Project tracker
+quantum_trader.py   engine: data, indicators, strategies, ML, backtester, CLI
+quantum_web.py      FastAPI server and the dashboard it serves
+setup_and_run.py    one-command installer and launcher
+index.html          static demo page
+schema: created on first run in quantum_market.db
 ```
 
-**How it works:**
+## Limitations
 
-```
-Browser (localhost:8000)
-    ↕ REST API (FastAPI)
-quantum_web.py
-    ↕ function calls
-quantum_trader.py
-    ↕ Alpaca SDK          ↕ yfinance/FRED
-Alpaca Paper Trading    Market Data
-    ↕
-quantum_market.db (SQLite)
-```
+- Paper trading only, and the auto-trader has no kill switch beyond stopping the process
+- Slippage is a flat constant, not a function of size or spread
+- Hyperparameters are fixed, not searched inside each fold
+- The watchlist is 30 large-cap US names; nothing here is tested on small caps or other asset classes
 
----
-
-## Usage
-
-### Browser Dashboard
-```bash
-python setup_and_run.py          # or: python quantum_web.py
-```
-Opens `http://localhost:8000` with tabs for Dashboard, Trade, Auto Trade, Analysis, and Data.
-
-### Terminal CLI
-```bash
-python quantum_trader.py
-```
-
-Commands:
-```
-buy AAPL 10              # Market buy
-buy AAPL 10 195.50       # Limit buy
-sell AAPL 10             # Sell
-close AAPL               # Close position
-positions                # View holdings
-pipeline                 # Run full data pipeline
-scan                     # Score all 30 stocks
-analyze AAPL             # 5-strategy deep dive
-train AAPL               # Walk-forward ML training
-predict AAPL             # ML prediction
-backtest AAPL momentum   # Backtest with tx costs
-auto start composite     # Start auto-trading
-auto stop                # Stop auto-trading
-regime                   # Detect market regime
-private                  # Private company exposure
-```
-
----
-
-## Setup (Manual)
-
-```bash
-# 1. Clone
-git clone https://github.com/lUIZhMACEDO/trading-bot-ml.git
-cd quantum-trader
-
-# 2. Install
-pip install -r requirements.txt
-
-# 3. Configure
-cp .env.example .env
-# Edit .env with your Alpaca paper trading API keys
-
-# 4. Run
-python quantum_web.py    # Browser dashboard
-# or
-python quantum_trader.py  # Terminal CLI
-```
-
-### Get API Keys
-1. Sign up at [app.alpaca.markets](https://app.alpaca.markets)
-2. Switch to **Paper Trading** (top-left dropdown)
-3. Go to **API Keys** → **Generate**
-4. Copy Key and Secret into `.env`
-
-### Optional: FRED API Key
-For macro data (VIX, yields, credit spreads):
-1. Register at [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html)
-2. Add key to `.env`
-
----
-
-## Disclaimer
-
-This software is for **paper trading and educational purposes only**. It does not constitute financial advice. All trading involves risk. Past performance and backtested results do not guarantee future returns. Use at your own risk.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE)
+MIT licensed.
