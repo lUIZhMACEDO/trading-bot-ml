@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-bot-ml"
+version = "3.0.0"
+description = "Alpaca paper-trading bot: rule-based strategies, a walk-forward ML ensemble, a cost-aware backtester and a FastAPI dashboard."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[project.scripts]
+trading-bot = "trading_bot.cli:main"
+trading-bot-dashboard = "trading_bot.dashboard.app:main"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+trading_bot = ["dashboard/static/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+addopts = "-ra"
+filterwarnings = [
+    # starlette's TestClient asks for httpx2; httpx still works
+    "ignore:Using `httpx` with `starlette.testclient`",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "tests"]
+extend-exclude = ["docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = [
+    "S101",  # assert is fine in tests and for internal invariants
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
+
+[tool.ruff.format]
+quote-style = "preserve"
