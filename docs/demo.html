@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantum Trader - ML-Powered Paper Trading</title>
+<title>Trading Bot demo</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -106,7 +106,7 @@ label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spa
 
 <div class="header">
   <div>
-    <div class="logo">QUANTUM TRADER</div>
+    <div class="logo">TRADING BOT</div>
     <div class="logo-sub">Alpaca Paper Trading &bull; ML Engine</div>
   </div>
   <div class="tab-bar">
@@ -124,7 +124,7 @@ label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spa
 </div>
 
 <div class="main">
-  <div class="demo-banner">Live Demo &mdash; Simulated data with fake updating prices. <a href="https://github.com/lUIZhMACEDO/trading-bot-ml" style="color:var(--accent1)">View on GitHub</a></div>
+  <div class="demo-banner">Static demo with simulated prices and made-up account numbers. Nothing here is real trading data. <a href="https://github.com/lUIZhMACEDO/trading-bot-ml" style="color:var(--accent1)">View on GitHub</a></div>
 
   <!-- ═══ DASHBOARD TAB ═══ -->
   <div class="tab-content active" id="tab-dashboard">
@@ -284,13 +284,13 @@ const positions = [
 ];
 
 const strategies = [
-  {name:'Composite (All 5)',type:'Adaptive',win:'60-70%',risk:'Medium',desc:'Runs all 5 strategies, aggregates into -5 to +5 score'},
-  {name:'RSI + MACD Confluence',type:'Quick',win:'58-65%',risk:'Medium',desc:'Oversold RSI + MACD histogram crossover'},
-  {name:'Bollinger Mean Reversion',type:'Quick',win:'55-62%',risk:'Low',desc:'Fades price extremes, Hurst skips trending'},
-  {name:'Golden/Death Cross',type:'Medium',win:'45-55%',risk:'Low',desc:'SMA 50/200 crossover with ADX confirmation'},
-  {name:'Momentum Breakout',type:'Quick',win:'50-60%',risk:'High',desc:'Triple-timeframe (5d/10d/21d) + volume'},
-  {name:'Hurst Regime Adaptive',type:'Medium',win:'55-65%',risk:'Medium',desc:'Auto-switches trend-follow vs mean-reversion'},
-  {name:'ML Ensemble',type:'Medium',win:'60-70%',risk:'Medium',desc:'LightGBM 40% + RF 35% + Ridge 25%'}
+  {name:'Composite (All 5)',type:'Adaptive',risk:'Medium',desc:'Runs all 5 strategies, aggregates into -5 to +5 score'},
+  {name:'RSI + MACD Confluence',type:'Quick',risk:'Medium',desc:'Oversold RSI + MACD histogram crossover'},
+  {name:'Bollinger Mean Reversion',type:'Quick',risk:'Low',desc:'Fades price extremes, Hurst skips trending'},
+  {name:'Golden/Death Cross',type:'Medium',risk:'Low',desc:'SMA 50/200 crossover with ADX confirmation'},
+  {name:'Momentum Breakout',type:'Quick',risk:'High',desc:'Triple-timeframe (5d/10d/21d) + volume'},
+  {name:'Hurst Regime Adaptive',type:'Medium',risk:'Medium',desc:'Auto-switches trend-follow vs mean-reversion'},
+  {name:'ML Ensemble',type:'Medium',risk:'Medium',desc:'LightGBM 40% + RF 35% + Ridge 25%'}
 ];
 
 const dbTables = [
@@ -409,7 +409,6 @@ function renderStrategies() {
       <div class="strat-desc">${s.desc}</div>
       <div class="strat-meta">
         <span class="badge ${typeColor}">${s.type}</span>
-        <span style="color:var(--green);font-size:10px;font-weight:700">${s.win}</span>
         <span style="color:var(--yellow);font-size:10px">${s.risk} risk</span>
       </div>
     </div>`;
